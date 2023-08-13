@@ -94,7 +94,7 @@
 ;; - 'emphasis
 ;; - 'link
 ;; interp. The type of CommonMark block node
-
+;; 创建节点，默认子节点为空
 ;; Node is (make-node Node-Type Node-Data (listof Node))
 ;; interp. a node to represent a CommonMark document
 (define* (make-node type #:optional data (children '()))
@@ -228,7 +228,7 @@
 (define (make-heading-node text level)
   (make-node 'heading
              `((level . ,level)
-               (closed . #t))
+               (closed. #t))
              (list (make-text-node (string-trim-both text))) ))
 
 ;; Node -> Boolean
