@@ -62,50 +62,61 @@
             link-definition-label
             link-definition-destination
             link-definition-title))
-
+;; parser的record类型
 (define-record-type <parser>
   (%make-parser str pos col)
   parser?
   (str parser-str)
   (pos parser-pos)
   (col parser-col))
-
+;; 创建全新的parser
 (define (make-parser str)
   (%make-parser str 0 0))
-
+;; string当前位置的char是否是ch
 (define (parser-char=? parser ch)
-  (char=? (string-ref (parser-str parser) (parser-pos parser))
+  (char=? (string-ref
+            (parser-str parser)
+            (parser-pos parser))
           ch))
-
+;; parser的pos位置是否大于等于当前string的长度
+;; 我们就完成了string的parser
 (define (parser-end? parser)
-  (>= (parser-pos parser) (string-length (parser-str parser))))
-
+  (>= (parser-pos parser)
+    (string-length (parser-str parser))))
+;; parser向前移动offset
 (define (parser-advance parser offset)
   (let ((str (parser-str parser)))
     (let loop ((pos (parser-pos parser))
                (col (parser-col parser))
                (count offset))
-      (cond ((>= pos (string-length str))
+      (cond ((>= pos (string-length str)) ;;如果pos已经大于长度时候
                 (%make-parser str pos col))
-            ((<= count 0)
+            ((<= count 0) ;; offset的如果小于或者是0
              (%make-parser str pos col))
-            ((char=? (string-ref str pos) #\tab)
-             (let ((col-change (- 4 (modulo col 4))))
-               (if (>= count col-change)
-                   (loop (+ pos 1) (+ col col-change) (- count col-change))
+            ((char=? (string-ref str pos) #\tab) ;;当前位置字符是tab
+             (let ((col-change (- 4 (modulo col 4))));;col的变化数量
+               (if (>= count col-change) ;;如果offset大于col变化数量
+                   (loop (+ pos 1) ;;向前移动一个pos
+                     (+ col col-change) ;; 更新col的变化
+                     (- count col-change)) ;; 更新offset
                    (%make-parser str pos (+ col count)))))
-            (else (loop (+ pos 1) (+ col 1) (- count 1)))))))
+        (else (loop (+ pos 1)
+                (+ col 1)
+                (- count 1)))))))
 
 (define (parser-advance-optional parser ch)
   (define new-parser (cut %make-parser
-                          (parser-str parser)
-                          (+ (parser-pos parser) 1)
-                          <>))
-  (if (and (not (parser-end? parser)) (parser-char=? parser ch))
+                          (parser-str parser) ;; string
+                          (+ (parser-pos parser) 1);; 更新parser的pos
+                          <>));; 创建全新的parser
+  (if (and
+        (not (parser-end? parser));;parser没有结束
+        (parser-char=? parser ch));;并且找到相应的字符
       (new-parser (+ (parser-col parser)
-                     (case ch
-                       ((#\tab) (- 4 (modulo (parser-col parser) 4)))
-                       (else 1))))
+                    (case ch
+                      ((#\tab) (- 4 (modulo (parser-col parser) 4)))
+                      ;;如果是tab，计算之前的列缩进，并进行补齐
+                      (else 1))))
       parser))
 
 (define (parser-advance-next-nonspace parser)
@@ -136,11 +147,13 @@
                    (loop (+ pos 1) (+ col col-change) (- count col-change))
                    (%make-parser str pos (+ col count)))))
             (else (%make-parser str pos col))))))
-
+;;默认的indent的是4
 (define code-indent 4)
-
+;;是否是indent
 (define (parser-indented? start end)
-  (>= (- (parser-col end) (parser-col start)) code-indent))
+  (>= (- (parser-col end)
+        (parser-col start))
+    code-indent))
 
 (define (parser-rest-str parser)
   (let ((str (parser-str parser))
@@ -154,7 +167,7 @@
               (substring str pos)
               (string-append (make-string expand #\space) (substring str (+ pos 1))))))))
 
-(define re-thematic-break (make-regexp "^((\\*[ \t]*){3,}|(_[ \t]*){3,}|(-[ \t]*){3,})[ \t]*$"))
+(define re-thematic-break (make-regexp "^((\\*[ \t]*){3,}|(_[ \t]*){3,}|(-[ \t]*){3,})[ \t]*$")) ;;hr 水平线
 (define re-atx-heading (make-regexp "^(#{1,6})([ \t]+|$)"))
 (define re-atx-heading-end (make-regexp "([ \t]+#+[ \t]*)$|(^#+[ \t]*)$"))
 (define re-setext-heading (make-regexp "^(=+|-+)[ \t]*$"))
@@ -214,7 +227,9 @@
   (regexp-exec re-empty-line (parser-str parser) (parser-pos parser)))
 
 (define (thematic-break parser)
-  (regexp-exec re-thematic-break (parser-str parser) (parser-pos parser)))
+  (regexp-exec re-thematic-break
+    (parser-str parser)
+    (parser-pos parser)))
 
 (define (setext-heading parser)
   (regexp-exec re-setext-heading (parser-str parser) (parser-pos parser)))
