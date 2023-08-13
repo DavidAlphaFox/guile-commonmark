@@ -227,8 +227,8 @@
 ;; String Level -> Node
 (define (make-heading-node text level)
   (make-node 'heading
-             `((level . ,level)
-               (closed. #t))
+             `((level . ,level) ;;1-6 标题等级
+               (closed. #t)) ;;是一个封闭的标签
              (list (make-text-node (string-trim-both text))) ))
 
 ;; Node -> Boolean

@@ -215,7 +215,7 @@
         (match:prefix end-match) ;; ## title ##
         (match:suffix match)))) ;; ## title
 ;;获取prefix的长度，因为井号后面有空格或tab，
-;;所以我们要选择第1个匹配的部分，第2个匹配部分是空格
+;;所以我们要选择第1个匹配的部分，第0部分是整个匹配，第2个匹配部分是空格
 ;;(regexp-exec re-atx-heading "## hello there") => ("## hello there" (0 . 3) (0 . 2) (2 . 3))
 (define (atx-heading-opening match)
   (match:substring match 1))
