@@ -168,7 +168,7 @@
               (string-append (make-string expand #\space) (substring str (+ pos 1))))))))
 
 (define re-thematic-break (make-regexp "^((\\*[ \t]*){3,}|(_[ \t]*){3,}|(-[ \t]*){3,})[ \t]*$")) ;;hr 水平线
-(define re-atx-heading (make-regexp "^(#{1,6})([ \t]+|$)"))
+(define re-atx-heading (make-regexp "^(#{1,6})([ \t]+|$)"));; h1 - h6的标签
 (define re-atx-heading-end (make-regexp "([ \t]+#+[ \t]*)$|(^#+[ \t]*)$"))
 (define re-setext-heading (make-regexp "^(=+|-+)[ \t]*$"))
 (define re-empty-line (make-regexp "^[ \t]*$"))
@@ -204,13 +204,19 @@
 
 (define (atx-heading parser)
   (regexp-exec re-atx-heading (parser-str parser) (parser-pos parser)))
-
+;;获取h1 - h6标签中的内容
 (define (atx-heading-content match)
-  (let ((end-match (regexp-exec re-atx-heading-end (match:suffix match))))
+  ;; (match:suffix match)用来获取re-atx-heading匹配成功后的内容结果
+  ;; 使用re-atx-heading-end对内容进行二次匹配
+  (let ((end-match
+          (regexp-exec re-atx-heading-end
+            (match:suffix match))))
     (if end-match
-        (match:prefix end-match)
-        (match:suffix match))))
-
+        (match:prefix end-match) ;; ## title ##
+        (match:suffix match)))) ;; ## title
+;;获取prefix的长度，因为井号后面有空格或tab，
+;;所以我们要选择第1个匹配的部分，第2个匹配部分是空格
+;;(regexp-exec re-atx-heading "## hello there") => ("## hello there" (0 . 3) (0 . 2) (2 . 3))
 (define (atx-heading-opening match)
   (match:substring match 1))
 
@@ -225,7 +231,7 @@
 
 (define (empty-line parser)
   (regexp-exec re-empty-line (parser-str parser) (parser-pos parser)))
-
+;;正则表达式判断当前位置时候是水平分割线
 (define (thematic-break parser)
   (regexp-exec re-thematic-break
     (parser-str parser)

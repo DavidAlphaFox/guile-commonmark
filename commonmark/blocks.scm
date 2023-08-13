@@ -203,6 +203,7 @@
   (string-length str))
 
 ;; Parser -> Node
+;; 解析一行
 (define (parse-line parser)
   (let ((nonspace-parser (parser-advance-next-nonspace parser)))
     (cond ((empty-line nonspace-parser)              (make-blank-node))
@@ -223,14 +224,15 @@
   (make-block-quote-node (parse-line (block-quote-rest match))))
 
 (define (make-atx-heading match)
-  (make-heading-node (atx-heading-content match)
-                     (heading-level (atx-heading-opening match))))
+  (make-heading-node
+    (atx-heading-content match) ;; 获取内容
+    (heading-level (atx-heading-opening match))))
 
 (define (make-code-block parser)
   (make-code-block-node (parser-rest-str (parser-advance parser code-indent))))
 
 (define (make-fenced-code match)
-  (make-fenced-code-node 
+  (make-fenced-code-node
    `((fence . ,(fenced-code-fence match))
      (fence-start . ,(fenced-code-start match))
      (info-string . ,(unescape-string (string-trim-both (fenced-code-info-string match)))))))
