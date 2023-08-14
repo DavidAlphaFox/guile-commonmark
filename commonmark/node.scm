@@ -120,7 +120,7 @@
              (acons key value (node-data node))
              (node-children node)))
 
-(define (node-closed? node)
+(define (node-closed? node);;读取当前节点的数据中的closed属性
   (node-get-data node 'closed))
 
 

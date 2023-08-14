@@ -30,8 +30,8 @@
   "Parses CommonMark blocks from PORT returning a CommonMark Document tree"
   (let loop ((root (make-document-node))
              (line (read-line-without-nul port)))
-    (if (eof-object? line)
-        (parse-clean-up root (lambda (doc references)
+    (if (eof-object? line) ;;如果是结尾了
+        (parse-clean-up root (lambda (doc references) ;;清理函数
                                (if (null? references)
                                    doc
                                    (node-add-data doc 'link-references references))))
@@ -40,7 +40,7 @@
 
 ;; Node Parser -> Node
 (define (parse-open-block node parser)
-  (cond ((node-closed? node) node)
+  (cond ((node-closed? node) node) ;;如果是闭合的节点，就直接返回节点
         ((document-node? node) (parse-container-block node parser))
         ((block-quote-node? node) (parse-block-quote node parser))
         ((code-block-node? node) (parse-code-block node parser))
@@ -50,10 +50,11 @@
 
 ;; Node Parser -> Node
 (define (parse-container-block node parser)
-  (cond ((and (no-children? node) (empty-line parser)) ;; empty line
-         node)
-        ((no-children? node)                            ;; first line
-         (add-child-node node (parse-line parser)))
+  (cond ((and (no-children? node)
+           (empty-line parser)) ;; empty line 空行，直接返回该节点
+          node)
+        ((no-children? node) ;; first line 该节点没有子节点
+         (add-child-node node (parse-line parser)));;解析一行，并将其加入该节点的子节点中
         ((and (node-closed? (last-child node)) (not (empty-line parser))) ;; new block
          (add-child-node node (parse-line parser)))
         (else (let ((new-child (parse-open-block (last-child node) parser)))
@@ -205,9 +206,9 @@
 ;; Parser -> Node
 ;; 解析一行
 (define (parse-line parser)
-  (let ((nonspace-parser (parser-advance-next-nonspace parser)))
-    (cond ((empty-line nonspace-parser)              (make-blank-node))
-          ((parser-indented? parser nonspace-parser) (make-code-block parser))
+  (let ((nonspace-parser (parser-advance-next-nonspace parser)));; 读取字符串直到第一个非空字符为止
+    (cond ((empty-line nonspace-parser)              (make-blank-node));; 空行
+          ((parser-indented? parser nonspace-parser) (make-code-block parser));;存在缩进的时候(indent,#\tab或多个#\tab)
           ((thematic-break nonspace-parser)          (make-thematic-break))
           ((block-quote nonspace-parser)          => make-block-quote)
           ((atx-heading nonspace-parser)          => make-atx-heading)
@@ -229,7 +230,7 @@
     (heading-level (atx-heading-opening match))))
 
 (define (make-code-block parser)
-  (make-code-block-node (parser-rest-str (parser-advance parser code-indent))))
+  (make-code-block-node (parser-rest-str (parser-advance parser code-indent))));;删除开头的4个空格或者tab
 
 (define (make-fenced-code match)
   (make-fenced-code-node
@@ -298,9 +299,13 @@
                          (make-paragraph-node (string-trim-right text))) links)))))
 
 (define (remove-empty-lines node col)
-  (col (make-node (node-type node) (node-data node)
-                  (list (reverse-join (drop-while (cut string-every char-set:blank <>) 
-                                                  (node-children node)))))
+  (col (make-node
+         (node-type node)
+         (node-data node)
+         (list (reverse-join ;;反向把字符串进行拼接 ("a","b" "c") => "c\nb\na\n"
+                 (drop-while ;;把所有的空行删除掉
+                   (cut string-every char-set:blank <>);;判断是否是空行，利用guile的charset机制
+                   (node-children node)))))
        '()))
 
 (define (clean-list-nodes node col)

@@ -84,14 +84,14 @@
   (>= (parser-pos parser)
     (string-length (parser-str parser))))
 ;; parser向前移动offset
-(define (parser-advance parser offset)
+(define (parser-advance parser offset);; pos的数量一定会大于col
   (let ((str (parser-str parser)))
     (let loop ((pos (parser-pos parser))
                (col (parser-col parser))
                (count offset))
-      (cond ((>= pos (string-length str)) ;;如果pos已经大于长度时候
+      (cond ((>= pos (string-length str)) ;;如果pos已经大于长度时候，代表解析已经结束了
                 (%make-parser str pos col))
-            ((<= count 0) ;; offset的如果小于或者是0
+            ((<= count 0) ;; offset的如果小于或者是0，代表我们已经完成了解析
              (%make-parser str pos col))
             ((char=? (string-ref str pos) #\tab) ;;当前位置字符是tab
              (let ((col-change (- 4 (modulo col 4))));;col的变化数量
@@ -123,11 +123,11 @@
   (let ((str (parser-str parser)))
     (let loop ((pos (parser-pos parser))
                (col (parser-col parser)))
-      (if (>= pos (string-length str))
+      (if (>= pos (string-length str)) ;;确保不是已经读取的行的尾部了
           (%make-parser str pos col)
-          (case (string-ref str pos)
+          (case (string-ref str pos) ;; 读取子字符串当前位置的字符
             ((#\space) (loop (+ pos 1) (+ col 1)))
-            ((#\tab)   (loop (+ pos 1) (+ col (- 4 (modulo col 4)))))
+            ((#\tab)   (loop (+ pos 1) (+ col (- 4 (modulo col 4))))) ;;(- 4 (modulo col 4))是为了补齐tab
             (else (%make-parser str pos col)))))))
 
 (define (parser-advance-min-spaces parser n)
@@ -158,14 +158,16 @@
 (define (parser-rest-str parser)
   (let ((str (parser-str parser))
         (pos (parser-pos parser)))
-    (if (or (>= pos (string-length str))
-            (not (char=? (string-ref str pos) #\tab)))
-        (substring str pos)
+    (if (or (>= pos (string-length str));;到达字符串的尾部了
+            (not (char=? (string-ref str pos) #\tab)));;当前位置不是tab
+        (substring str pos);;截取当前字符串，开始位置为pos
         (let* ((col (parser-col parser))
                (expand (- 4 (modulo col 4))))
-          (if (= expand 0)
-              (substring str pos)
-              (string-append (make-string expand #\space) (substring str (+ pos 1))))))))
+          (if (= expand 0);; ???此处不应该发生
+            (substring str pos);;截取当前字符串，开始位置为pos
+            (string-append
+              (make-string expand #\space)
+              (substring str (+ pos 1))))))))
 
 (define re-thematic-break (make-regexp "^((\\*[ \t]*){3,}|(_[ \t]*){3,}|(-[ \t]*){3,})[ \t]*$")) ;;hr 水平线
 (define re-atx-heading (make-regexp "^(#{1,6})([ \t]+|$)"));; h1 - h6的标签
