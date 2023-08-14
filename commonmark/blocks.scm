@@ -209,7 +209,7 @@
   (let ((nonspace-parser (parser-advance-next-nonspace parser)));; 读取字符串直到第一个非空字符为止
     (cond ((empty-line nonspace-parser)              (make-blank-node));; 空行
           ((parser-indented? parser nonspace-parser) (make-code-block parser));;存在缩进的时候(indent,#\tab或多个#\tab)
-          ((thematic-break nonspace-parser)          (make-thematic-break))
+          ((thematic-break nonspace-parser)          (make-thematic-break));; 水平线
           ((block-quote nonspace-parser)          => make-block-quote)
           ((atx-heading nonspace-parser)          => make-atx-heading)
           ((fenced-code nonspace-parser)          => make-fenced-code)
@@ -220,7 +220,7 @@
 
 (define (make-thematic-break)
   (make-thematic-break-node))
-
+;;使用>构建的引用代码块，blockquote是支持多层嵌套的
 (define (make-block-quote match)
   (make-block-quote-node (parse-line (block-quote-rest match))))
 
@@ -231,7 +231,7 @@
 
 (define (make-code-block parser)
   (make-code-block-node (parser-rest-str (parser-advance parser code-indent))));;删除开头的4个空格或者tab
-
+;;```或者~~~构建的代码块
 (define (make-fenced-code match)
   (make-fenced-code-node
    `((fence . ,(fenced-code-fence match))
