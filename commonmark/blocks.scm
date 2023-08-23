@@ -32,7 +32,7 @@
              (line (read-line-without-nul port)))
     (if (eof-object? line) ;;如果是结尾了
         (parse-clean-up root (lambda (doc references) ;;清理函数
-                               (if (null? references)
+                               (if (null? references) ;;如果没有任何references,那么就可以直接返回doc
                                    doc
                                    (node-add-data doc 'link-references references))))
         (loop (parse-open-block root (make-parser line))
