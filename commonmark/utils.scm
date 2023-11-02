@@ -25,11 +25,28 @@
   "like filter-map but uses a continuation to collect an extra list of values"
   (if (null? l) ;; 如果list是空的
       (k '() '())
-      (f (car l) (lambda (v d) 
+      (f (car l) (lambda (v d)
                    (filter-map&co f (cdr l)
                                   (lambda (v2 d2)
-                                    (k (if v (cons v v2) v2) (append d d2)))))))) 
+                                    (k (if v (cons v v2) v2) (append d d2))))))))
 
+;; (define f (v k)
+;;    (k v (list v))
+;;(define k (v d)
+;;  (list v d))
+;;(filter-map&co f '(a b) k) =>
+;;(f a (lambda (v d) '(a '(a))
+;;          (filter-map&co f '(b) (lambda (v2 d2) (k (cons 'a v2) (append '(a) d2))))))
+;;此时k是初始的函数k
+;;(f a (lambda (v d) '(a '(a))
+;;       (f b (lambda (v d) '(b '(b))
+;;          (filter-map&co f '() (lambda (v2 d2) (k (cons 'b v2) (append '(b) d2))))))))
+;;此时k是(lambda (v2 d2) (k (cons 'a v2) (append '(a) d2)))
+;;(f a (lambda (v d)
+;;       (f b (lambda (v d)
+;;           (k '() '())))))
+;;此时的k是 k1 = (lambda (v2 d2) (k (cons 'a v2) (append '(a) d2)))
+;; (lambda (v2 d2) (k1 (cons 'b v2) (append '(b) d2)))
 
 
 ;; Line is one of:
