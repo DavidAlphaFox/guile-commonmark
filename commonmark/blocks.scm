@@ -268,11 +268,11 @@
 (define (make-paragraph parser)
   (make-paragraph-node (parser-rest-str parser)))
 
-(define (parse-clean-up node col)
-  (cond ((not (node? node)) (col node '()))
+(define (parse-clean-up node col) ;;节点和col函数
+  (cond ((not (node? node)) (col node '())) ;;如果不是节点，使用col函数
         ((code-block-node? node) (remove-empty-lines node col))
         ((paragraph-node? node) (parse-reference-definition node col))
-        ((list-node? node) (clean-list-nodes node col))
+        ((list-node? node) (clean-list-nodes node col)) ;;如果是一个列表节点
         ((item-node? node) (remove-blank-nodes node col))
         (else (filter-map&co parse-clean-up (node-children node)
                              (lambda (v d)
@@ -298,7 +298,7 @@
                          #f
                          (make-paragraph-node (string-trim-right text))) links)))))
 
-(define (remove-empty-lines node col)
+(define (remove-empty-lines node col) ;;删除空白行
   (col (make-node
          (node-type node)
          (node-data node)
@@ -312,14 +312,14 @@
   (define (any-blank-nodes? item)
     (any blank-node? (node-children item)))
 
-  (let ((blank-nodes (any any-blank-nodes? (node-children node))))
-    (filter-map&co parse-clean-up (node-children node)
+  (let ((blank-nodes (any any-blank-nodes? (node-children node))));;判断是否存在空节点
+    (filter-map&co parse-clean-up (node-children node);;当前节点的所有子节点
                    (lambda (v d)
                      (col (make-node (node-type node)
                                      (if blank-nodes
-                                         (acons 'tight #f (node-data node))
+                                         (acons 'tight #f (node-data node)) ;;给节点属性添加tight
                                          (node-data node))
-                                     v)
+                                     v);; v是子节点
                           d)))))
 
 (define (remove-blank-nodes node col)

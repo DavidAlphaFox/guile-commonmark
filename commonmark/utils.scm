@@ -21,14 +21,14 @@
             read-line-without-nul))
 
 
-(define (filter-map&co f l k)
+(define (filter-map&co f l k) ;; f是过滤函数,k是个连续函数，用来承接所有结果
   "like filter-map but uses a continuation to collect an extra list of values"
-  (if (null? l)
+  (if (null? l) ;; 如果list是空的
       (k '() '())
-      (f (car l) (lambda (v d)
+      (f (car l) (lambda (v d) 
                    (filter-map&co f (cdr l)
                                   (lambda (v2 d2)
-                                    (k (if v (cons v v2) v2) (append d d2))))))))
+                                    (k (if v (cons v v2) v2) (append d d2)))))))) 
 
 
 
